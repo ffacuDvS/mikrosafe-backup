@@ -285,4 +285,4 @@ The author assumes no responsibility for:
 
 ## 👤 Author
 
-**Facundo Alarcón - (@ffacu.dvs)**
+**Facundo Alarcón ( @ffacu.dvs )**
