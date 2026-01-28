@@ -1,0 +1,79 @@
+<!-- templates/email_template.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f6f8;
+        color: #333;
+      }
+      .email-wrapper {
+        max-width: 600px;
+        margin: auto;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+      }
+      .header {
+        background-color: #0d47a1;
+        padding: 20px;
+        text-align: center;
+      }
+      .header img {
+        width: 80px;
+        height: auto;
+      }
+      .content {
+        padding: 30px;
+      }
+      .title {
+        font-size: 22px;
+        color: #2e7d32;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .msg {
+        font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #888;
+        padding: 20px;
+        border-top: 1px solid #eee;
+        background-color: #eeedec;
+      }
+      .footer img {
+        width: 150px;
+        height: auto;
+        display: block;
+        margin: 20px auto 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="header">
+      </div>
+      <div class="content">
+        <div class="title">✅ Backup generado correctamente</div>
+        <div class="msg">
+          Adjuntamos el último respaldo automático generado por <strong>MikroSafe</strong>.<br>
+        </div>
+      </div>
+      <div class="footer">
+        Este mensaje fue generado automáticamente. No responder.<br>
+        <img src="cid:logo" alt="MikroSafe Small Logo">
+        <small>MikroSafe v${VERSION} – ${DATE}</small>
+      </div>
+    </div>
+  </body>
+</html>

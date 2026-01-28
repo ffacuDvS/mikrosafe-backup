@@ -1,0 +1,25 @@
+.env
+.env.local
+.env.*.local
+*.log
+=======
+# Runtime data
+backups/
+outbox/
+*.zip
+
+# Logs
+
+database/*log.txt
+
+# Secrets % env
+*.env
+
+# Local configs
+
+database/dependencies/msmtprc.txt
+database/dependencies/sender.txt
+
+# OS / Editor
+.DB_Store
+*.swp
