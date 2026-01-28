@@ -1,4 +1,6 @@
-# MikroSafe
+<p align="center">
+  <img src="assets/logo.png" alt="MikroSafe Backup" width="200">
+</p>
 
 Automated backup system for MikroTik devices using SSH/SCP, password fallback, compression, and email reporting.
 
