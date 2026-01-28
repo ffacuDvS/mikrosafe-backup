@@ -103,7 +103,7 @@ perform_backups() {
                 -P "$SSH_PORT" \
                 -o ConnectTimeout="$SSH_TIMEOUT" \
                 -o StrictHostKeyChecking=accept-new \
-                "$SSH_USER@$IP:/1.rsc" "$BACKUP_DIR/$FILE" 2>/dev/null; then
+                "$SSH_USER@$IP:/mikrosafebackup.rsc" "$BACKUP_DIR/$FILE" 2>/dev/null; then
                 SUCCESS=1
                 break
             fi
