@@ -28,8 +28,8 @@ ENV_FILE="${ENV_FILE:-$DATABASE_DIR/credentials.env}"
 DEVICES_FILE="${DEVICES_FILE:-$DATABASE_DIR/mikrosafe-mkts.list}"
 EMAILS_FILE="${EMAILS_FILE:-$DATABASE_DIR/emails.list}"
 
-ERROR_LOG="$DATABASE_DIR/error.log"
-ACTIVITY_LOG="$DATABASE_DIR/activity.log"
+ERROR_LOG="$DATABASE_DIR/error-log.txt"
+ACTIVITY_LOG="$DATABASE_DIR/activity-log.txt"
 
 DATE="$(date '+%Y-%m-%d_%H-%M-%S')"
 ZIP_FILE="$OUTBOX_DIR/backup_$DATE.zip"
