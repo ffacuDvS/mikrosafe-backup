@@ -248,7 +248,7 @@ If only a single new device needs to be added and a full sweep is not desired, t
 
 For each device:
 
-* Attempts SCP without password (SSH key)
+* Uses password-based authentication with optional SSH key support if manually configured.
 * Falls back to password attempts sequentially
 * Logs failures without stopping the run
 
@@ -300,7 +300,7 @@ Contains:
 
 * Timestamp
 * Device name
-* Failure reason
+* Failure summary
 
 ---
 
