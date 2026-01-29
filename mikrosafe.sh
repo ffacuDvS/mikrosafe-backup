@@ -146,7 +146,7 @@ send_email() {
         {
             echo "From: $FROM_EMAIL"
             echo "To: $email"
-            echo "Subject: ✅ Último Backup Generado"
+            echo "Subject: ✅ MikroSafe – Backup Report"
             echo "MIME-Version: 1.0"
             echo "Content-Type: multipart/related; boundary=\"MIXED-BOUNDARY\""
             echo
