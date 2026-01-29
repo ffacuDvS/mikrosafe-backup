@@ -137,7 +137,7 @@ admin@example.com
 ### `.msmtprc`
 
 This is the configuration file used by msmtp, an SMTP client, to define how email messages should be sent.
-It is Typically located at `~/.msmtprc`.
+It is typically located at `~/.msmtprc`.
 
 Example:
 
@@ -241,7 +241,7 @@ Backups are stored as:
 ## 🧪 Example Cron Job
 
 ```
-0 2 * * * /opt/mikrosafe/mikrosafe.sh >/dev/null 2>&1
+0 2 * * * /path/to/mikrosafe/mikrosafe.sh >/dev/null 2>&1
 ```
 
 ---
@@ -250,7 +250,7 @@ Backups are stored as:
 
 ### Error Log
 
-`database/error.log`
+`database/error-log.txt`
 
 Contains:
 
@@ -262,7 +262,7 @@ Contains:
 
 ### Activity Log
 
-`database/activity.log`
+`database/activity-log.txt`
 
 Contains:
 
