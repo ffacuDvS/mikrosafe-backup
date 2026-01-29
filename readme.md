@@ -34,18 +34,21 @@ The script is designed with:
 ## 📂 Project Structure
 
 ```
-MikroSafe/
+mikrosafe-backup
+├── assets
+│   ├── backup_script.rsc
+│   ├── email_template.html
+│   └── logo.png
+├── database
+│   ├── credentials.env
+│   ├── emails.list
+│   ├── mikrosafe-mkts.list
+│   ├── error-log.txt
+│   └── activity-log.txt
+├── deploy_backup_script.sh
+├── LICENSE
 ├── mikrosafe.sh
-├── deploy_backup_script.sh # deploys the backup script to MikroTik devices
-├── database/
-│   ├── credentials.env
-│   ├── mikrosafe-mkts.list
-│   ├── emails.list
-│   ├── error-log.txt
-│   └── activity-log.txt
-├── backups/
-├── outbox/
-└── assets/
+└── readme.md
 ```
 
 ---
