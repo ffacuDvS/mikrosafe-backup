@@ -31,6 +31,50 @@ The script is designed with:
 
 ---
 
+## ⚡ Quick Start
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/ffacuDvS/mikrosafe-backup
+    cd mikrosafe-backup
+    ```
+
+2.  **Configure the environment:**
+    ```bash
+    cp database/credentials.env.example database/credentials.env
+    nano database/credentials.env
+    # Edit SSH_USER, SSH_PASSWORDS, FROM_EMAIL, etc.
+    ```
+
+3.  **Add your devices:**
+    ```bash
+    nano database/mikrosafe-mkts.list
+    # Add lines in NAME:IP:GROUP format
+    ```
+
+4.  **Set up email (optional but recommended):**
+    ```bash
+    nano ~/.msmtprc
+    # Configure your SMTP settings
+    chmod 600 ~/.msmtprc
+    ```
+
+5.  **Deploy the backup script to MikroTik devices (one-time):**
+    ```bash
+    ./deploy_backup_script.sh
+    ```
+
+6.  **Run a manual backup test:**
+    ```bash
+    ./mikrosafe.sh
+    ```
+    Check the `outbox/` directory and your email.
+
+7.  **Schedule automatic execution:**
+    Add a cron job (see example in [Cron Job](#-example-cron-job) section).
+
+---
+
 ## 📂 Project Structure
 
 ```
