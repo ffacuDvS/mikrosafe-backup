@@ -154,6 +154,35 @@ After that, I recommend typing: `chmod 600 ~/.msmtprc`
 
 ---
 
+### `backup_script.rsc`
+
+This file, located at `assets/backup_script.rsc`, contains the RouterOS commands required to create and enable both the backup script and the scheduler responsible for generating daily configuration exports on each MikroTik device.
+
+The script performs the following actions:
+
+1. Generates a /export of the running configuration
+2. Creates a /system backup save
+3. Schedules a daily execution via RouterOS scheduler
+
+```bash
+/system script
+remove [find name=mikrosafe_backup]
+add name=mikrosafe_backup dont-require-permissions=yes source={
+    /export file=mikrosafebackup;
+    /system backup save name=mikrosafebackup password=
+}
+run mikrosafe_backup
+
+/system scheduler
+remove [find name=mikrosafe_scheduler]
+add name=mikrosafe_scheduler interval=1d start-time=00:05:00 on-event="/system script run mikrosafe_backup" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon
+```
+
+When running `deploy_backup_script.sh` (located at the project root), the script performs a full sweep of all devices listed in `database/mikrosafe-mkts.list`, automatically deploying the required RouterOS script and scheduler on each MikroTik device.
+If only a single new device needs to be added and a full sweep is not desired, the contents of `backup_script.rsc` can be manually copied and executed directly on the target MikroTik via its terminal.
+
+---
+
 ## 🚀 How It Works
 
 ### 1. Environment Validation
