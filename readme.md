@@ -40,9 +40,9 @@ MikroSafe/
 ├── database/
 │   ├── credentials.env
 │   ├── mikrosafe-mkts.list
-│   ├── emails.txt
-│   ├── error_log.txt
-│   └── activity_log.txt
+│   ├── emails.list
+│   ├── error-log.txt
+│   └── activity-log.txt
 ├── backups/
 ├── outbox/
 └── assets/
