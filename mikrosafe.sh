@@ -9,7 +9,7 @@ set -euo pipefail
 # License: MIT
 # ====================================
 
-readonly VERSION="1.1.0"
+readonly VERSION="1.1.0a"
 
 # ============================
 # PATHS & CONFIG
