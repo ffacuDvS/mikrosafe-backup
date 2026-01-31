@@ -38,7 +38,6 @@ mapfile -t DEVICES < "$DEVICES_FILE"
 for device in "${DEVICES[@]}"; do
   NAME=$(echo "$device" | cut -d':' -f1)
   IP=$(echo "$device" | cut -d':' -f2)
-  GROUP=$(echo "$device" | cut -d':' -f3)
 
 echo "[INFO] Processing $NAME ($IP)..."
 
