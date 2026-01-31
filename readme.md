@@ -33,6 +33,22 @@ The script is designed with:
 
 ## ⚡ Quick Start
 
+### 🔴 Pre-flight requirements (MANDATORY)
+
+Before proceeding, ensure that the server running **MikroSafe** can establish an **SSH connection to every target MikroTik device**.
+
+Minimum requirements:
+- TCP port 22 (or the custom SSH port in use) reachable from the MikroSafe server
+- Valid public IP or internal routing to the MikroTik device
+- Firewall rules allow incoming SSH connections
+- SSH service enabled on the MikroTik
+- Valid credentials (SSH user and password)
+
+Minimal connectivity check:
+```bash
+ssh admin@MIKROTIK_IP
+```
+
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/ffacuDvS/mikrosafe-backup
