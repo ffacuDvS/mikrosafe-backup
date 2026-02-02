@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$SCRIPT_DIR"
 DATABASE_DIR="$BASE_DIR/database"
@@ -8,9 +7,14 @@ DEVICES_FILE="$DATABASE_DIR/mikrosafe-mkts.list"
 CREDENTIALS_FILE="$DATABASE_DIR/credentials.env"
 
 if [[ ! -f "$CREDENTIALS_FILE" ]]; then
-  echo "[ERROR] Missing $CREDENTIALS_FILE"
+  echo -e "${RED}[ERROR]${RESET} Missing $CREDENTIALS_FILE"
   exit 1
 fi
+
+RESET="\e[0m"
+RED="\e[31m"
+GREEN="\e[32m"
+CYAN="\e[36m"
 
 set -a
 source "$CREDENTIALS_FILE"
@@ -26,10 +30,10 @@ if [[ -z "${SSH_TIMEOUT:-}" ]]; then
   SSH_TIMEOUT=10
 fi
 
-echo "[INFO] Starting remote backup activation..."
+echo -e "${CYAN}[INFO]${RESET} Starting remote backup activation..."
 
 if [[ ! -f "$DEVICES_FILE" ]]; then
-  echo "[ERROR] Missing $DEVICES_FILE"
+  echo -e "${RED}[ERROR]${RESET} Missing $DEVICES_FILE"
   exit 1
 fi
 
@@ -39,7 +43,7 @@ for device in "${DEVICES[@]}"; do
   NAME=$(echo "$device" | cut -d':' -f1)
   IP=$(echo "$device" | cut -d':' -f2)
 
-echo "[INFO] Processing $NAME ($IP)..."
+echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
 
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$IP" >/dev/null 2>&1 || true
 
@@ -58,24 +62,28 @@ echo "[INFO] Processing $NAME ($IP)..."
       continue
     fi
 
-    timeout "$SSH_TIMEOUT" sshpass -p "$PASS" ssh \
+    IMPORT_OUTPUT=$(timeout "$SSH_TIMEOUT" sshpass -p "$PASS" ssh -T \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
       -o HostKeyAlgorithms=+ssh-rsa \
-      "$SSH_USER@$IP" <<EOF >/dev/null 2>&1
+      -o LogLevel=ERROR \
+      "$SSH_USER@$IP" <<EOF
 /import file-name=backup_script.rsc
 EOF
+)
 
-    if [[ $? -eq 0 ]]; then
+    if echo "$IMPORT_OUTPUT" | grep -qiE "failure|error|invalid"; then
+      continue
+    else
       SUCCESS=1
       break
     fi
   done
 
   if [[ $SUCCESS -eq 1 ]]; then
-    echo "[SUCCESS] Remote backup enabled for $NAME ($IP)"
+    echo -e "${GREEN}[SUCCESS]${RESET} Remote backup enabled for $NAME ($IP)"
   else
-    echo "[ERROR] Configuration failed on $NAME ($IP)"
+    echo -e "${RED}[ERROR]${RESET} Configuration failed on $NAME ($IP)"
   fi
 done
