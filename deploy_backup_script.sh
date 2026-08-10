@@ -56,8 +56,8 @@ echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
       -o HostKeyAlgorithms=+ssh-rsa \
-      "$BASE_DIR/assets/backup_script.rsc" \
-      "$SSH_USER@$IP:backup_script.rsc" >/dev/null 2>&1
+      "$BASE_DIR/assets/mikrosafebackup.rsc" \
+      "$SSH_USER@$IP:mikrosafebackup.rsc" >/dev/null 2>&1
 
     if [[ $? -ne 0 ]]; then
       continue
@@ -70,7 +70,7 @@ echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
       -o HostKeyAlgorithms=+ssh-rsa \
       -o LogLevel=ERROR \
       "$SSH_USER@$IP" <<EOF
-/import file-name=backup_script.rsc
+/import file-name=mikrosafebackup.rsc
 EOF
 )
 
