@@ -51,6 +51,7 @@ echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
 
   for PASS in "${PASSWORDS[@]}"; do
     timeout "$SSH_TIMEOUT" sshpass -p "$PASS" scp \
+      -P "$SSH_PORT" \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
