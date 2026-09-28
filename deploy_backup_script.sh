@@ -80,17 +80,21 @@ for device in "${DEVICES[@]}"; do
 
   SUCCESS=0
 
+  LAST_ERROR=""
+
   for PASS in "${PASSWORDS[@]}"; do
-    SSHPASS="$PASS" timeout "$SSH_TIMEOUT" sshpass -e scp \
+    SCP_OUTPUT=$(SSHPASS="$PASS" timeout "$SSH_TIMEOUT" sshpass -e scp \
       -P "$SSH_PORT" \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
       -o HostKeyAlgorithms=+ssh-rsa \
       "$DEPLOY_SCRIPT" \
-      "$SSH_USER@$IP:mikrosafebackup.rsc" >/dev/null 2>&1
+      "$SSH_USER@$IP:mikrosafebackup.rsc" 2>&1)
+    SCP_STATUS=$?
 
-    if [[ $? -ne 0 ]]; then
+    if [[ $SCP_STATUS -ne 0 ]]; then
+      LAST_ERROR="scp failed: $SCP_OUTPUT"
       continue
     fi
 
@@ -100,12 +104,14 @@ for device in "${DEVICES[@]}"; do
       -o ConnectTimeout="$SSH_TIMEOUT" \
       -o HostKeyAlgorithms=+ssh-rsa \
       -o LogLevel=ERROR \
-      "$SSH_USER@$IP" <<EOF
+      "$SSH_USER@$IP" 2>&1 <<EOF
 /import file-name=mikrosafebackup.rsc
 EOF
 )
+    IMPORT_STATUS=$?
 
-    if echo "$IMPORT_OUTPUT" | grep -qiE "failure|error|invalid"; then
+    if [[ $IMPORT_STATUS -ne 0 ]] || echo "$IMPORT_OUTPUT" | grep -qiE "failure|error|invalid"; then
+      LAST_ERROR="import failed (exit=$IMPORT_STATUS): $IMPORT_OUTPUT"
       continue
     else
       SUCCESS=1
@@ -116,7 +122,7 @@ EOF
   if [[ $SUCCESS -eq 1 ]]; then
     echo -e "${GREEN}[SUCCESS]${RESET} Remote backup enabled for $NAME ($IP)"
   else
-    echo -e "${RED}[ERROR]${RESET} Configuration failed on $NAME ($IP)"
+    echo -e "${RED}[ERROR]${RESET} Configuration failed on $NAME ($IP)${LAST_ERROR:+ - $LAST_ERROR}"
     ((++FAIL_COUNT))
   fi
 done
