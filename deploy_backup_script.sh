@@ -1,20 +1,45 @@
 #!/usr/bin/env bash
+set -uo pipefail
+
+# ====================================
+# Script: deploy_backup_script.sh
+# Project: MikroSafe
+# Description: One-time deployment of the RouterOS backup script
+#              and scheduler to every device in mikrosafe-mkts.list
+# Author: Facundo Alarcón | @ffacu.dvs
+# Repository: https://github.com/ffacuDvS/mikrosafe-backup
+# License: MIT
+# ====================================
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$SCRIPT_DIR"
 DATABASE_DIR="$BASE_DIR/database"
+ASSETS_DIR="$BASE_DIR/assets"
 
 DEVICES_FILE="$DATABASE_DIR/mikrosafe-mkts.list"
 CREDENTIALS_FILE="$DATABASE_DIR/credentials.env"
+DEPLOY_SCRIPT="$ASSETS_DIR/mikrosafebackup.rsc"
+
+RESET="\e[0m"
+RED="\e[31m"
+GREEN="\e[32m"
+CYAN="\e[36m"
+YELLOW="\e[33m"
 
 if [[ ! -f "$CREDENTIALS_FILE" ]]; then
   echo -e "${RED}[ERROR]${RESET} Missing $CREDENTIALS_FILE"
   exit 1
 fi
 
-RESET="\e[0m"
-RED="\e[31m"
-GREEN="\e[32m"
-CYAN="\e[36m"
+if [[ ! -f "$DEVICES_FILE" ]]; then
+  echo -e "${RED}[ERROR]${RESET} Missing $DEVICES_FILE"
+  exit 1
+fi
+
+if [[ ! -f "$DEPLOY_SCRIPT" ]]; then
+  echo -e "${RED}[ERROR]${RESET} Missing $DEPLOY_SCRIPT"
+  exit 1
+fi
 
 set -a
 source "$CREDENTIALS_FILE"
@@ -22,48 +47,54 @@ set +a
 
 PASSWORDS=(${SSH_PASSWORDS:-})
 
-if [[ -z "${SSH_USER:-}" ]]; then
-  SSH_USER="admin"
-fi
-
-if [[ -z "${SSH_TIMEOUT:-}" ]]; then
-  SSH_TIMEOUT=10
-fi
-
-echo -e "${CYAN}[INFO]${RESET} Starting remote backup activation..."
-
-if [[ ! -f "$DEVICES_FILE" ]]; then
-  echo -e "${RED}[ERROR]${RESET} Missing $DEVICES_FILE"
+if [[ ${#PASSWORDS[@]} -eq 0 ]]; then
+  echo -e "${RED}[ERROR]${RESET} SSH_PASSWORDS is empty in $CREDENTIALS_FILE"
   exit 1
 fi
 
-mapfile -t DEVICES < "$DEVICES_FILE"
+: "${SSH_USER:=admin}"
+: "${SSH_TIMEOUT:=10}"
+: "${SSH_PORT:=22}"
+
+echo -e "${CYAN}[INFO]${RESET} Starting remote backup activation..."
+
+DEVICES=()
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+  DEVICES+=("$line")
+done < "$DEVICES_FILE"
+
+if [[ ${#DEVICES[@]} -eq 0 ]]; then
+  echo -e "${YELLOW}[WARN]${RESET} No devices found in $DEVICES_FILE"
+  exit 0
+fi
+
+FAIL_COUNT=0
 
 for device in "${DEVICES[@]}"; do
-  NAME=$(echo "$device" | cut -d':' -f1)
-  IP=$(echo "$device" | cut -d':' -f2)
+  IFS=':' read -r NAME IP GROUP <<< "$device"
 
-echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
+  echo -e "${CYAN}[INFO]${RESET} Processing $NAME ($IP)..."
 
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$IP" >/dev/null 2>&1 || true
 
   SUCCESS=0
 
   for PASS in "${PASSWORDS[@]}"; do
-    timeout "$SSH_TIMEOUT" sshpass -p "$PASS" scp \
+    SSHPASS="$PASS" timeout "$SSH_TIMEOUT" sshpass -e scp \
       -P "$SSH_PORT" \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
       -o HostKeyAlgorithms=+ssh-rsa \
-      "$BASE_DIR/assets/mikrosafebackup.rsc" \
+      "$DEPLOY_SCRIPT" \
       "$SSH_USER@$IP:mikrosafebackup.rsc" >/dev/null 2>&1
 
     if [[ $? -ne 0 ]]; then
       continue
     fi
 
-    IMPORT_OUTPUT=$(timeout "$SSH_TIMEOUT" sshpass -p "$PASS" ssh -T \
+    IMPORT_OUTPUT=$(SSHPASS="$PASS" timeout "$SSH_TIMEOUT" sshpass -e ssh -T \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
@@ -86,5 +117,13 @@ EOF
     echo -e "${GREEN}[SUCCESS]${RESET} Remote backup enabled for $NAME ($IP)"
   else
     echo -e "${RED}[ERROR]${RESET} Configuration failed on $NAME ($IP)"
+    ((++FAIL_COUNT))
   fi
 done
+
+if [[ $FAIL_COUNT -gt 0 ]]; then
+  echo -e "${YELLOW}[WARN]${RESET} $FAIL_COUNT device(s) failed to configure"
+  exit 1
+fi
+
+exit 0

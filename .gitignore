@@ -1,25 +1,23 @@
-.env
-.env.local
-.env.*.local
-*.log
-=======
 # Runtime data
 backups/
 outbox/
 *.zip
+.mikrosafe.lock
 
 # Logs
-
 database/*log.txt
+*.log
 
-# Secrets % env
+# Secrets & env
 *.env
+.env
+.env.local
+.env.*.local
 
 # Local configs
-
 database/dependencies/msmtprc.txt
 database/dependencies/sender.txt
 
 # OS / Editor
-.DB_Store
+.DS_Store
 *.swp

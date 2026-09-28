@@ -2,109 +2,142 @@
   <img src="assets/logo.png" alt="MikroSafe Backup" width="200">
 </p>
 
-Automated backup system for MikroTik devices using SSH/SCP, password fallback, compression, and email reporting.
+Sistema de respaldo automatizado para dispositivos MikroTik mediante SSH/SCP, con contraseñas de respaldo, compresión y notificación por correo electrónico.
 
 ---
 
-## 📌 Overview
+## 📌 Descripción general
 
-**MikroSafe** is a Bash-based automation tool designed for NOC / ISP environments to reliably extract configuration backups from MikroTik devices, package them, and distribute the results via email.
+**MikroSafe** es una herramienta de automatización en Bash pensada para entornos de NOC / ISP, cuyo objetivo es extraer de forma confiable los respaldos de configuración de dispositivos MikroTik, empaquetarlos y distribuir los resultados por correo electrónico.
 
-The script is designed with:
+El script fue diseñado con los siguientes criterios:
 
-* Fail-fast execution
-* Clear separation of configuration and logic
-* Support for password-based authentication (with optional SSH keys)
-* Audit-friendly logging
-
----
-
-## 🎯 Key Features
-
-* Batch backup of multiple MikroTik devices
-* Supports grouped devices (for organization)
-* Password rotation fallback (`sshpass`)
-* Automatic ZIP compression
-* Email delivery with attachment
-* Log retention and cleanup policy
-* Non-interactive, cron-friendly execution
+* Ejecución de tipo "fail-fast"
+* Separación clara entre configuración y lógica
+* Soporte para autenticación por contraseña (con posibilidad de usar claves SSH)
+* Registro de actividad orientado a auditoría
+* Protección contra ejecuciones concurrentes mediante un archivo de bloqueo
 
 ---
 
-## ⚡ Quick Start
+## 🎯 Funciones principales
 
-### 🔴 Pre-flight requirements (MANDATORY)
+* Respaldo por lotes de múltiples dispositivos MikroTik
+* Soporte para agrupar dispositivos (organización por `GROUP`)
+* Filtrado de ejecución por grupo (`--group`)
+* Modo de prueba sin conexión real a los equipos (`--dry-run`)
+* Reintento con contraseñas alternativas (`sshpass`)
+* Compresión automática en ZIP
+* Envío por correo electrónico con el respaldo adjunto
+* Asunto del correo dinámico según haya o no fallos
+* Política de retención y limpieza de logs y respaldos antiguos
+* Bloqueo de ejecución (`flock`) para evitar corridas simultáneas por cron
+* Validación de permisos del archivo de credenciales
+* Ejecución no interactiva, apta para cron
 
-Before proceeding, ensure that the server running **MikroSafe** can establish an **SSH connection to every target MikroTik device**.
+---
 
-Minimum requirements:
-- TCP port 22 (or the custom SSH port in use) reachable from the MikroSafe server
-- Valid public IP or internal routing to the MikroTik device
-- Firewall rules allow incoming SSH connections
-- SSH service enabled on the MikroTik
-- Valid credentials (SSH user and password)
+## ⚡ Guía rápida
 
-Minimal connectivity check:
+### 🔴 Requisitos previos (OBLIGATORIOS)
+
+Antes de continuar, asegurate de que el servidor donde corre **MikroSafe** pueda establecer una **conexión SSH con cada dispositivo MikroTik de destino**.
+
+Requisitos mínimos:
+- Puerto TCP 22 (o el puerto SSH personalizado en uso) accesible desde el servidor de MikroSafe
+- IP pública válida o ruteo interno hacia el dispositivo MikroTik
+- Reglas de firewall que permitan conexiones SSH entrantes
+- Servicio SSH habilitado en el MikroTik
+- Credenciales válidas (usuario y contraseña de SSH)
+
+Verificación mínima de conectividad:
 ```bash
-ssh admin@MIKROTIK_IP
+ssh admin@IP_DEL_MIKROTIK
 ```
 
-1.  **Clone the repository:**
+1.  **Clonar el repositorio:**
     ```bash
     git clone https://github.com/ffacuDvS/mikrosafe-backup
     cd mikrosafe-backup
     ```
 
-2.  **Configure the environment:**
+2.  **Configurar el entorno:**
     ```bash
     cp database/credentials.env.example database/credentials.env
+    chmod 600 database/credentials.env
     nano database/credentials.env
-    # Edit SSH_USER, SSH_PASSWORDS, FROM_EMAIL, etc.
+    # Editar SSH_USER, SSH_PASSWORDS, FROM_EMAIL, etc.
     ```
 
-3.  **Add your devices:**
+3.  **Agregar los dispositivos:**
     ```bash
     nano database/mikrosafe-mkts.list
-    # Add lines in NAME:IP:GROUP format
+    # Agregar líneas con el formato NOMBRE:IP:GRUPO
     ```
 
-4.  **Set up email (optional but recommended):**
+4.  **Configurar el envío de correo (opcional, pero recomendado):**
     ```bash
     nano ~/.msmtprc
-    # Configure your SMTP settings
+    # Configurar los datos de tu servidor SMTP
     chmod 600 ~/.msmtprc
     ```
 
-5.  **Deploy the backup script to MikroTik devices (one-time):**
+5.  **Desplegar el script de respaldo en los dispositivos MikroTik (una sola vez):**
     ```bash
     ./deploy_backup_script.sh
     ```
 
-6.  **Run a manual backup test:**
+6.  **Ejecutar una prueba manual:**
     ```bash
-    ./mikrosafe.sh
+    ./mikrosafe.sh --dry-run   # Simula la corrida sin conectarse a los equipos
+    ./mikrosafe.sh             # Ejecución real
     ```
-    Check the `outbox/` directory and your email.
+    Revisá el directorio `outbox/` y tu casilla de correo.
 
-7.  **Schedule automatic execution:**
-    Add a cron job (see example in [Cron Job](#-example-cron-job) section).
+7.  **Programar la ejecución automática:**
+    Agregá una tarea cron (ver ejemplo en la sección [Ejemplo de tarea cron](#-ejemplo-de-tarea-cron)).
 
 ---
 
-## 📂 Project Structure
+## 🖥️ Uso y opciones de línea de comandos
+
+```bash
+./mikrosafe.sh [opciones]
+```
+
+| Opción              | Descripción                                                  |
+|----------------------|--------------------------------------------------------------|
+| `-g, --group <GRUPO>` | Respalda únicamente los dispositivos que pertenecen a `<GRUPO>` |
+| `-n, --dry-run`       | Muestra qué haría el script sin conectarse a los equipos      |
+| `-v, --version`       | Muestra la versión y termina                                  |
+| `-h, --help`          | Muestra la ayuda y termina                                    |
+
+Ejemplos:
+
+```bash
+# Respaldar solo el grupo "core"
+./mikrosafe.sh --group core
+
+# Simular una corrida completa sin tocar los equipos
+./mikrosafe.sh --dry-run
+```
+
+---
+
+## 📂 Estructura del proyecto
 
 ```
 mikrosafe-backup
 ├── assets
-│   ├── backup_script.rsc
-│   ├── email_template.html
-│   └── logo.png
+│   ├── mikrosafebackup.rsc
+│   ├── email_template.html
+│   └── logo.png
 ├── database
-│   ├── credentials.env
-│   ├── emails.list
-│   ├── mikrosafe-mkts.list
-│   ├── error-log.txt
-│   └── activity-log.txt
+│   ├── credentials.env
+│   ├── emails.list
+│   ├── mikrosafe-mkts.list
+│   ├── error-log.txt
+│   └── activity-log.txt
 ├── deploy_backup_script.sh
 ├── LICENSE
 ├── mikrosafe.sh
@@ -113,39 +146,51 @@ mikrosafe-backup
 
 ---
 
-## ⚙️ Requirements
+## ⚙️ Requisitos
 
 * Bash >= 4.0
 * `scp`
-* `sshpass` (for password fallback)
+* `sshpass` (para el reintento con contraseñas)
+* `flock` (incluido en `util-linux`, usado para el bloqueo de ejecución)
 * `zip`
 * `msmtp`
 * `base64`
 
 ---
 
-## 🔐 Security Model
+## 🔐 Modelo de seguridad
 
-### Authentication Priority
+### Prioridad de autenticación
 
-1. SSH keys (if configured and accepted by MikroTik)
-2. Password-based authentication using `sshpass`
+1. Claves SSH (si están configuradas y el MikroTik las acepta)
+2. Autenticación por contraseña mediante `sshpass`
 
-> If SSH keys are not available or supported, the script works **fully** using passwords defined in `credentials.env`.
+> Si no hay claves SSH disponibles o el equipo no las soporta, el script funciona **completamente** utilizando las contraseñas definidas en `credentials.env`.
+
+### Manejo de contraseñas
+
+* Las contraseñas nunca se pasan como argumento de línea de comandos (`sshpass -p`), ya que eso las expone en la salida de `ps` a cualquier usuario del sistema. En su lugar, se exportan a través de la variable de entorno `SSHPASS` (`sshpass -e`).
+* El script verifica los permisos de `credentials.env` en cada ejecución y advierte si el archivo es legible por otros usuarios además del propietario. Se recomienda mantenerlo en `600`.
+* `credentials.env` y los archivos de dependencias sensibles están excluidos del control de versiones mediante `.gitignore`.
+
+### Verificación de host SSH
+
+* `mikrosafe.sh` usa `StrictHostKeyChecking=accept-new`, es decir, confía en la clave del host la primera vez que se conecta y la rechaza si cambia luego (protección básica contra suplantación posterior al primer contacto).
+* `deploy_backup_script.sh` deshabilita la verificación de host (`StrictHostKeyChecking=no`) porque se ejecuta una sola vez, sobre equipos recién puestos en producción, para habilitar el script remoto. Si tu entorno lo requiere, podés endurecer esta verificación editando el script.
 
 ---
 
-## 🧩 Configuration Files
+## 🧩 Archivos de configuración
 
 ### `deploy_backup_script.sh`
 
-Deploys `assets/backup_script.rsc` to all MikroTik devices listed in `database/mikrosafe-mkts.list` using credentials from `database/credentials.env`.
+Despliega `assets/mikrosafebackup.rsc` en todos los dispositivos MikroTik listados en `database/mikrosafe-mkts.list`, usando las credenciales de `database/credentials.env`.
 
 ### `credentials.env`
 
-Environment-based secret storage.
+Almacenamiento de credenciales basado en variables de entorno.
 
-Example:
+Ejemplo:
 
 ```
 SSH_USER=admin
@@ -155,77 +200,81 @@ SSH_PORT=22
 FROM_EMAIL=mikrosafe@localhost
 ```
 
-Notes:
+Notas:
 
-* Passwords are space-separated
-* Multiple passwords allow credential rotation
+* Las contraseñas van separadas por espacios
+* Tener varias contraseñas permite manejar rotación de credenciales entre equipos
+* El archivo debe tener permisos `600` (`chmod 600 database/credentials.env`)
 
 ---
 
 ### `mikrosafe-mkts.list`
 
-List of MikroTik devices to back up.
+Lista de dispositivos MikroTik a respaldar.
 
-Format:
+Formato:
 
 ```
-NAME:IP:GROUP
+NOMBRE:IP:GRUPO
 ```
 
-Example:
+Ejemplo:
 
 ```
 core01:192.168.1.1:core
 edge02:192.168.2.1:edges
 ```
 
+Las líneas vacías y las que comienzan con `#` se ignoran, por lo que podés comentar dispositivos temporalmente sin borrarlos.
+
 ---
 
 ### `emails.list`
 
-List of recipients for backup reports.
+Lista de destinatarios de los reportes de respaldo.
 
-Example:
+Ejemplo:
 
 ```
 noc@example.com
 admin@example.com
 ```
 
+Al igual que en `mikrosafe-mkts.list`, las líneas vacías o que comienzan con `#` se ignoran.
+
 ---
 
 ### `.msmtprc`
 
-This is the configuration file used by msmtp, an SMTP client, to define how email messages should be sent.
-It is typically located at `~/.msmtprc`.
+Es el archivo de configuración utilizado por `msmtp`, el cliente SMTP encargado de enviar los correos. Normalmente se ubica en `~/.msmtprc`.
 
-Example:
+Ejemplo:
 
 ```
 account default
-host <HOST_MAIL> # EXAMPLE: smtp.gmail.com
+host <HOST_DE_CORREO> # EJEMPLO: smtp.gmail.com
 port 587
-from <YOUR_MAIL> # EXAMPLE: example@domain.com
+from <TU_CORREO> # EJEMPLO: ejemplo@dominio.com
 auth on
-user <YOUR_MAIL> # EXAMPLE: example@domain.com
-password <YOUR_MAIL_PASSWORD> # EXAMPLE: superpassword_123!
+user <TU_CORREO> # EJEMPLO: ejemplo@dominio.com
+password <TU_CONTRASEÑA> # EJEMPLO: superclave_123!
 tls on
 tls_certcheck off
 ```
 
-After that, I recommend typing: `chmod 600 ~/.msmtprc`
+Se recomienda ejecutar luego: `chmod 600 ~/.msmtprc`
 
 ---
 
-### `backup_script.rsc`
+### `mikrosafebackup.rsc`
 
-This file, located at `assets/backup_script.rsc`, contains the RouterOS commands required to create and enable both the backup script and the scheduler responsible for generating daily configuration exports on each MikroTik device.
+Este archivo, ubicado en `assets/mikrosafebackup.rsc`, contiene los comandos de RouterOS necesarios para crear y habilitar tanto el script de respaldo como el programador (`scheduler`) responsable de generar exportaciones diarias de la configuración en cada dispositivo MikroTik.
 
-The script performs the following actions:
+El script realiza las siguientes acciones:
 
-1. Generates a /export of the running configuration
-2. Creates a /system backup save
-3. Schedules a daily execution via RouterOS scheduler
+1. Genera un `/export` de la configuración en ejecución
+2. Crea un `/system backup save`
+3. Programa la ejecución diaria mediante el scheduler de RouterOS
 
 ```bash
 /system script
@@ -241,140 +290,145 @@ remove [find name=mikrosafe_scheduler]
 add name=mikrosafe_scheduler interval=1d start-time=00:05:00 on-event="/system script run mikrosafe_backup" policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon
 ```
 
-When running `deploy_backup_script.sh` (located at the project root), the script performs a full sweep of all devices listed in `database/mikrosafe-mkts.list`, automatically deploying the required RouterOS script and scheduler on each MikroTik device.
-If only a single new device needs to be added and a full sweep is not desired, the contents of `backup_script.rsc` can be manually copied and executed directly on the target MikroTik via its terminal.
+Al ejecutar `deploy_backup_script.sh` (ubicado en la raíz del proyecto), el script recorre todos los dispositivos listados en `database/mikrosafe-mkts.list` y despliega automáticamente el script y el scheduler de RouterOS en cada uno de ellos.
+Si solo necesitás agregar un dispositivo nuevo y no querés hacer un barrido completo, podés copiar manualmente el contenido de `mikrosafebackup.rsc` y ejecutarlo directamente en la terminal del MikroTik de destino.
 
 ---
 
-## 🚀 How It Works
+## 🚀 Funcionamiento
 
-### 1. Environment Validation
+### 1. Validación del entorno
 
-* Verifies required files
-* Loads `.env` securely
-* Enforces strict Bash mode:
+* Verifica la existencia de los archivos requeridos (`credentials.env`, lista de dispositivos)
+* Carga el `.env` de forma segura y advierte si sus permisos son demasiado abiertos
+* Aplica el modo estricto de Bash:
 
-  * `-e` exit on error
-  * `-u` undefined variable protection
-  * `pipefail` error propagation
+  * `-e` corta la ejecución ante cualquier error
+  * `-u` protege contra variables no definidas
+  * `pipefail` propaga errores dentro de tuberías (`pipe`)
+* Adquiere un bloqueo (`flock`) para evitar que dos instancias corran al mismo tiempo (por ejemplo, si una corrida por cron se solapa con una ejecución manual)
 
 ---
 
-### 2. Backup Execution
+### 2. Ejecución del respaldo
 
-For each device:
+Para cada dispositivo:
 
-* Uses password-based authentication with optional SSH key support if manually configured.
-* Falls back to password attempts sequentially
-* Logs failures without stopping the run
+* Se filtran las líneas vacías o comentadas de la lista de dispositivos
+* Si se especificó `--group`, solo se procesan los dispositivos de ese grupo
+* Se utiliza autenticación por contraseña (mediante la variable de entorno `SSHPASS`, nunca como argumento visible en `ps`)
+* Ante un fallo, se reintenta con la siguiente contraseña de la lista
+* Los fallos se registran en el log de errores sin detener el resto de la corrida
 
-Backups are stored as:
+Los respaldos se almacenan con el siguiente formato de nombre:
 
 ```
-<GROUP>_<NAME>_<DATE>.rsc
-```
-
----
-
-### 3. Compression
-
-* All backups + error log are zipped
-* Output stored in `outbox/`
-
----
-
-### 4. Email Reporting
-
-* Sends ZIP file as attachment
-* Uses MIME multipart
-* Compatible with `msmtp`
-
----
-
-### 5. Cleanup Policy
-
-* Keeps last **3 ZIP files** in `outbox/`
-* Clears temporary backup directory
-
----
-
-## 🧪 Example Cron Job
-
-```
-0 2 * * * /path/to/mikrosafe/mikrosafe.sh >/dev/null 2>&1
+<GRUPO>_<NOMBRE>_<FECHA>.rsc
 ```
 
 ---
 
-## 📜 Logging
+### 3. Compresión
 
-### Error Log
+* Todos los respaldos, junto con el log de errores, se comprimen en un ZIP
+* El resultado se guarda en `outbox/`
+
+---
+
+### 4. Notificación por correo
+
+* Envía el archivo ZIP como adjunto
+* Utiliza MIME multipart
+* Compatible con `msmtp`
+* El asunto del correo cambia automáticamente si hubo dispositivos con fallas (por ejemplo: "⚠️ MikroSafe – Backup Report (2 failed)")
+* Si el envío falla para algún destinatario, se registra en el log de errores sin interrumpir el resto de la ejecución
+
+---
+
+### 5. Política de limpieza
+
+* Conserva los últimos **3 archivos ZIP** en `outbox/`
+* Vacía el directorio temporal de respaldos
+
+---
+
+## 🧪 Ejemplo de tarea cron
+
+```
+0 2 * * * /ruta/a/mikrosafe/mikrosafe.sh >/dev/null 2>&1
+```
+
+---
+
+## 📜 Registro de actividad (logging)
+
+### Log de errores
 
 `database/error-log.txt`
 
-Contains:
+Contiene:
 
-* Timestamp
-* Device name
-* Failure summary
+* Marca de tiempo
+* Nombre del dispositivo
+* Resumen del fallo
 
 ---
 
-### Activity Log
+### Log de actividad
 
 `database/activity-log.txt`
 
-Contains:
+Contiene:
 
-* Execution timestamps
-* Successful run confirmation
-
----
-
-## 📄 License
-
-MIT License
-
-You are free to:
-
-* Use
-* Modify
-* Distribute
-
-You are **not protected** from misuse, illegal usage, or commercial forks.
+* Marcas de tiempo de cada ejecución
+* Confirmación de corridas exitosas, junto con la cantidad de dispositivos respaldados correctamente y con fallas
 
 ---
 
-## ⚠️ Disclaimer
+## 📄 Licencia
 
-This tool is intended for **authorized auditing and backup operations only**.
+Licencia MIT
 
-The author assumes no responsibility for:
+Tenés libertad para:
 
-* Unauthorized access
-* Misuse
-* Damage caused by improper deployment
+* Usar
+* Modificar
+* Distribuir
+
+No estás protegido frente a usos indebidos, ilegales o forks comerciales.
 
 ---
 
-## 🧠 Target Audience
+## ⚠️ Aviso
+
+Esta herramienta está pensada exclusivamente para **operaciones de auditoría y respaldo autorizadas**.
+
+El autor no asume ninguna responsabilidad por:
+
+* Accesos no autorizados
+* Usos indebidos
+* Daños causados por un despliegue incorrecto
+
+---
+
+## 🧠 Público destinatario
 
 * ISPs
-* NOC teams
-* Network administrators
-* Security auditors
+* Equipos de NOC
+* Administradores de red
+* Auditores de seguridad
 
 ---
 
-## 🔮 Roadmap (Suggested)
+## 🔮 Hoja de ruta (propuesta)
 
-* Encrypted backup storage
-* Per-device credentials
-* Web dashboard
-* GPG-signed backups
+* Almacenamiento de respaldos cifrados
+* Credenciales por dispositivo
+* Panel de control web
+* Respaldos firmados con GPG
 
 ---
 
-## 👤 Author
+## 👤 Autor
 
 **Facundo Alarcón ( @ffacu.dvs )**
