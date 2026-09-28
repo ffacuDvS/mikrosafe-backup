@@ -99,6 +99,7 @@ for device in "${DEVICES[@]}"; do
     fi
 
     IMPORT_OUTPUT=$(SSHPASS="$PASS" timeout "$SSH_TIMEOUT" sshpass -e ssh -T \
+      -p "$SSH_PORT" \
       -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null \
       -o ConnectTimeout="$SSH_TIMEOUT" \
